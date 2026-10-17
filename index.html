@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Prodej DG věcí</title>
-<meta name="description" content="Disky Latitude 64, Westside, Dynamic Discs a oblečení. Nové i podepsané kusy, poptávka online.">
+<title>Jakub Semerád – výprodej</title>
+<meta name="description" content="Výprodej disků a oblečení Jakuba Semeráda. Latitude 64, Westside, Dynamic Discs – nové i podepsané kusy, poptávka online.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Instrument+Sans:wght@400;500;600&family=Azeret+Mono:wght@500;700&display=swap">
@@ -72,25 +72,35 @@ button { cursor: pointer; }
   padding-top: env(safe-area-inset-top, 0px);
   position: relative; overflow: hidden;
 }
-/* řetězy koše: jemné svislé linky vpravo */
-.band::after {
-  content: ""; position: absolute; inset: 0 0 0 auto; width: min(46%, 520px);
-  background: repeating-linear-gradient(90deg, transparent 0 13px, rgb(255 255 255 / .06) 13px 15px);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 40%, #000 70%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 40%, #000 70%, transparent);
-  pointer-events: none;
+/* Velké číslo PDGA jako vodoznak za jménem */
+.band::before {
+  content: "#91925"; position: absolute; right: -2vw; bottom: -0.18em; z-index: 0;
+  font: 900 clamp(120px, 22vw, 300px)/1 var(--f-display); font-stretch: 125%; letter-spacing: -.03em;
+  color: rgb(255 255 255 / .045); pointer-events: none; white-space: nowrap;
 }
-.band .wrap { padding-block: 34px 30px; position: relative; z-index: 1; }
+.band .wrap {
+  padding-block: 40px 34px; position: relative; z-index: 1;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 340px); gap: 24px; align-items: end;
+}
 .eyebrow {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
   font: 600 12px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--band-muted);
 }
-h1 {
-  margin: 10px 0 0; font-family: var(--f-display); font-weight: 900; font-stretch: 118%;
-  font-size: clamp(36px, 7vw, 68px); line-height: .95; letter-spacing: -.01em; text-transform: uppercase;
-  text-wrap: balance;
+.pdga {
+  font: 700 12px/1 var(--f-num); letter-spacing: .02em; color: var(--hi-ink); background: var(--hi);
+  padding: 5px 8px; border-radius: 5px;
 }
+h1 {
+  margin: 14px 0 0; font-family: var(--f-display); font-weight: 900; font-stretch: 118%;
+  font-size: clamp(44px, 9vw, 104px); line-height: .86; letter-spacing: -.015em; text-transform: uppercase;
+}
+h1 span { display: block; }
 h1 em { font-style: normal; color: var(--hi); }
-.stats { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 22px; }
+.lead { margin: 16px 0 0; max-width: 46ch; font-size: 16.5px; line-height: 1.5; color: var(--band-muted); }
+.lead b { color: var(--band-ink); font-weight: 600; }
+.hero-art { align-self: stretch; display: flex; align-items: flex-end; justify-content: flex-end; }
+.hero-art svg { width: 100%; max-height: 300px; overflow: visible; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 26px; }
 .stat b { display: block; font: 700 22px/1.1 var(--f-num); font-variant-numeric: tabular-nums; }
 .stat span { font-size: 13px; color: var(--band-muted); }
 
@@ -116,6 +126,21 @@ h1 em { font-style: normal; color: var(--hi); }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
 .seg button { border: 0; background: none; padding: 8px 12px; font-size: 14px; }
 .seg button[aria-pressed="true"] { background: var(--surface-2); font-weight: 600; box-shadow: inset 0 -2px 0 var(--hi); }
+
+/* ---------- Jak to funguje ---------- */
+.steps {
+  list-style: none; margin: 22px 0 0; padding: 0; counter-reset: s;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+.steps li {
+  counter-increment: s; background: var(--surface); border-radius: 12px; padding: 12px 14px 12px 50px;
+  position: relative; font-size: 14px; color: var(--muted); box-shadow: var(--shadow);
+}
+.steps li::before {
+  content: counter(s); position: absolute; left: 14px; top: 12px; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--band); color: var(--band-ink); font: 700 13px/1 var(--f-num);
+}
+.steps b { display: block; color: var(--ink); font-weight: 600; font-size: 14.5px; }
 
 /* ---------- Banner ---------- */
 .notice {
@@ -162,6 +187,7 @@ main { padding-block: 8px 120px; }
   background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / .15);
 }
 .tag.sig { background: var(--hi); color: var(--hi-ink); }
+.tag.own { background: var(--band); color: var(--band-ink); }
 .ribbon {
   position: absolute; right: 10px; bottom: 10px; font: 800 12px/1 var(--f-display); font-stretch: 112%;
   text-transform: uppercase; letter-spacing: .06em; padding: 7px 10px; border-radius: 6px; color: #fff;
@@ -262,9 +288,21 @@ textarea.field { min-height: 80px; resize: vertical; }
 .done code { font: 700 18px var(--f-num); background: var(--hi); color: var(--hi-ink); padding: 4px 10px; border-radius: 6px; }
 
 footer { color: var(--muted); font-size: 13px; padding-block: 0 40px; }
+footer .sign {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; align-items: baseline;
+  border-top: 1px solid var(--line); padding-top: 18px;
+}
+footer .who { font: 900 18px/1 var(--f-display); font-stretch: 118%; text-transform: uppercase; color: var(--ink); }
+footer .who small { font: 600 12px var(--f-num); color: var(--muted); margin-left: 8px; letter-spacing: 0; }
 
+@media (max-width: 860px) {
+  .band .wrap { grid-template-columns: 1fr; }
+  .hero-art { display: none; }
+  .steps { grid-template-columns: 1fr; }
+}
 @media (max-width: 640px) {
-  .band .wrap { padding-block: 26px 22px; }
+  .band .wrap { padding-block: 28px 24px; }
+  .lead { font-size: 15px; }
   .toolbar .wrap { gap: 8px; }
   .controls { width: 100%; }
   .search { flex: 1; width: auto; }
@@ -289,9 +327,32 @@ footer { color: var(--muted); font-size: 13px; padding-block: 0 40px; }
 
 <header class="band">
   <div class="wrap">
-    <div class="eyebrow">Disc golf · výprodej</div>
-    <h1>Prodej <em>DG</em> věcí</h1>
-    <div class="stats" id="stats"></div>
+    <div>
+      <div class="eyebrow"><span class="pdga">PDGA #91925</span><span>Disc golf · výprodej</span></div>
+      <h1><span>Jakub</span><span>Semerád<em>.</em></span></h1>
+      <p class="lead">Disky a oblečení, které mi zbyly v bagu i ve skříni. <b>Nové kusy, discy s podpisem a merch z turnajů.</b> Vyber, pošli poptávku, ozvu se.</p>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 320 300" fill="none" stroke-linecap="round">
+        <!-- koš: horní obruč, řetězy, tyč, koš a patka -->
+        <g stroke="var(--band-ink)" opacity=".85">
+          <rect x="176" y="26" width="112" height="12" rx="3" stroke-width="3"/>
+          <g stroke-width="1.6" opacity=".7">
+            <path d="M180 38 Q196 96 226 128"/><path d="M196 38 Q206 92 228 128"/><path d="M212 38 Q218 88 230 128"/>
+            <path d="M232 38 V128"/>
+            <path d="M252 38 Q246 88 234 128"/><path d="M268 38 Q258 92 236 128"/><path d="M284 38 Q268 96 238 128"/>
+          </g>
+          <path d="M232 38 V286" stroke-width="4"/>
+          <path d="M170 140 H294 L280 182 H184 Z" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M176 154 H288" stroke-width="1.6" opacity=".6"/>
+          <path d="M200 286 H264" stroke-width="4"/>
+        </g>
+        <!-- dráha disku do řetězů -->
+        <path d="M6 268 C 60 150, 130 70, 214 96" stroke="var(--hi)" stroke-width="2.5" stroke-dasharray="2 9"/>
+        <ellipse cx="214" cy="96" rx="17" ry="5.5" transform="rotate(-14 214 96)" fill="var(--hi)"/>
+      </svg>
+    </div>
   </div>
 </header>
 
@@ -317,12 +378,20 @@ footer { color: var(--muted); font-size: 13px; padding-block: 0 40px; }
 </div>
 
 <main class="wrap">
+  <ol class="steps">
+    <li><b>Vyber si</b>Přidej disky do poptávky. Nic neplatíš předem.</li>
+    <li><b>Pošli poptávku</b>Kusy se ti hned zarezervují, ostatní uvidí „Rezervováno“.</li>
+    <li><b>Domluvíme se</b>Ozvu se e-mailem kvůli platbě a předání – Zásilkovna, Balíkovna nebo turnaj.</li>
+  </ol>
   <div id="notice"></div>
   <div id="list"></div>
 </main>
 
 <footer class="wrap">
-  <span id="updated"></span>
+  <div class="sign">
+    <span class="who">Jakub Semerád<small>PDGA #91925</small></span>
+    <span id="updated"></span>
+  </div>
 </footer>
 
 <div class="cartbar" id="cartbar" hidden>
@@ -397,7 +466,10 @@ const KATEGORIE = [
   { id: 'mid', nazev: 'Midrange' },
   { id: 'putter', nazev: 'Puttery' },
   { id: 'obleceni', nazev: 'Oblečení' },
+  { id: 'podpis', nazev: 'S podpisem' },
 ];
+// Podpis Jakuba má vlastní štítek, ostatní podpisy (např. Kristin Lätt) zůstávají žluté
+const jeMuj = p => /semer/i.test(p.podpis || '');
 const NAZEV_SEKCE = { driver: 'Distanční drivery', fairway: 'Fairway drivery', mid: 'Midrange', putter: 'Puttery & approach', obleceni: 'Oblečení' };
 
 const state = { items: [], kat: 'all', avail: 'all', q: '', sort: 'default', cart: nactiKosik(), demo: !API_URL, updated: null };
@@ -507,7 +579,8 @@ function karta(p) {
   const v = state.cart[p.id]?.ks || 0;
   const tags = [];
   tags.push(`<span class="tag">${p.stav && p.stav.toLowerCase() !== 'nový' ? 'Použitý ' + esc(p.stav) : 'Nový'}</span>`);
-  if (p.podpis) tags.push(`<span class="tag sig" title="Podpis">Podpis: ${esc(p.podpis)}</span>`);
+  if (jeMuj(p)) tags.push(`<span class="tag own" title="${esc(p.podpis)}">Můj podpis na rimu</span>`);
+  else if (p.podpis) tags.push(`<span class="tag sig" title="Podpis">Podpis: ${esc(p.podpis)}</span>`);
   const ribbon = p.status === 'sold' ? '<span class="ribbon sold">Prodáno</span>' : p.status === 'res' ? '<span class="ribbon res">Rezervováno</span>' : '';
   const zastupce = `<div class="disc ${p.kat === 'obleceni' ? 'shirt' : ''}"><i>Bez fotky</i></div>`;
   const media = p.foto
@@ -542,7 +615,7 @@ function karta(p) {
 function filtrovane() {
   const q = state.q.trim().toLowerCase();
   let list = state.items.filter(p =>
-    (state.kat === 'all' || p.kat === state.kat) &&
+    (state.kat === 'all' || (state.kat === 'podpis' ? !!p.podpis : p.kat === state.kat)) &&
     (state.avail === 'all' || (state.avail === 'free' ? p.status === 'free' : p.status !== 'free')) &&
     (!q || (p.znacka + ' ' + p.nazev + ' ' + p.podpis).toLowerCase().includes(q)));
   const sp = p => p.flight ? p.flight[0] : -1;
@@ -564,11 +637,12 @@ function render() {
     [kusu, 'volných kusů'],
     [new Set(items.map(p => p.znacka)).size, 'značek'],
     [minCena ? 'od ' + minCena : '–', 'Kč za kus'],
-    [prodanych, 'už prodáno'],
-  ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('') : '';
+    // „0 už prodáno“ by na začátku prodeje působilo smutně
+    prodanych ? [prodanych, 'už prodáno'] : null,
+  ].filter(Boolean).map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('') : '';
 
   $('cats').innerHTML = KATEGORIE.map(k => {
-    const n = k.id === 'all' ? items.length : items.filter(p => p.kat === k.id).length;
+    const n = k.id === 'all' ? items.length : items.filter(p => k.id === 'podpis' ? !!p.podpis : p.kat === k.id).length;
     if (!n && k.id !== 'all') return '';
     return `<button class="chip" type="button" data-kat="${k.id}" aria-pressed="${state.kat === k.id}">${k.nazev}<span class="n">${n}</span></button>`;
   }).join('');
@@ -611,7 +685,7 @@ function zavri() { drawer.hidden = true; scrim.hidden = true; document.body.styl
 function renderDrawer() {
   const body = $('drawerBody');
   if (odeslano) {
-    body.innerHTML = `<div class="done"><div class="big">Odesláno</div><p>Poptávka má číslo <code>${esc(odeslano)}</code>.<br>Kusy jsou pro tebe zarezervované a prodejce se ti ozve kvůli platbě a předání.</p><button class="add" type="button" data-close>Zpět na nabídku</button></div>`;
+    body.innerHTML = `<div class="done"><div class="big">Odesláno</div><p>Poptávka má číslo <code>${esc(odeslano)}</code>.<br>Kusy máš zarezervované. Ozvu se ti kvůli platbě a předání. Díky!</p><button class="add" type="button" data-close>Zpět na nabídku</button></div>`;
     return;
   }
   const kp = kosikPolozky();
@@ -646,7 +720,7 @@ function renderDrawer() {
       <div class="hp" aria-hidden="true"><label>Web<input id="f-web" name="web" tabindex="-1" autocomplete="off"></label></div>
       ${chybaFormulare ? `<div class="msg err" role="alert">${esc(chybaFormulare)}</div>` : ''}
       <button class="send" type="submit" id="send">${state.demo ? 'Odeslat (ukázka)' : 'Odeslat poptávku'}</button>
-      <p class="fine">Poptávka je nezávazná. Kusy se zarezervují a prodejce ti pošle potvrzení s dotazem na adresu a platbu.</p>
+      <p class="fine">Poptávka je nezávazná. Kusy se ti zarezervují a já ti pošlu potvrzení s dotazem na adresu a platbu.</p>
     </form>`;
 }
 
@@ -662,7 +736,7 @@ async function odesli(e) {
   try { localStorage.setItem('dg-kontakt', JSON.stringify({ jmeno: d.jmeno, email: d.email, telefon: d.telefon, predani: d.predani })); } catch (_) {}
   const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email || '');
   if (!d.jmeno?.trim()) chybaFormulare = 'Vyplň jméno.';
-  else if (!emailOk && !d.telefon?.trim()) chybaFormulare = 'Zadej e-mail nebo telefon, ať se ti prodejce může ozvat.';
+  else if (!emailOk && !d.telefon?.trim()) chybaFormulare = 'Zadej e-mail nebo telefon, ať se ti můžu ozvat.';
   else chybaFormulare = '';
   if (chybaFormulare) { renderDrawer(); return; }
   if (state.demo) { chybaFormulare = 'Tohle je ukázka bez napojení na tabulku, poptávka se neodeslala.'; renderDrawer(); return; }
