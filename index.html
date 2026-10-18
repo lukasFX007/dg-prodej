@@ -393,7 +393,7 @@ footer .who small { font: 600 12px var(--f-num); color: var(--muted); margin-lef
   <ol class="steps">
     <li><b>Vyber si</b>Přidej disky do košíku. Nic neplatíš předem.</li>
     <li><b>Pošli objednávku</b>Kusy se ti hned zarezervují. E-mailem ti pošlu potvrzení s QR kódem na zaplacení.</li>
-    <li><b>Zaplať a je to tvoje</b>Po zaplacení posílám Zásilkovnou, nebo si to předáme osobně či na turnaji.</li>
+    <li><b>Zaplať a je to tvoje</b>Po zaplacení posílám Zásilkovnou. Při předání osobně nebo na turnaji můžeš platit i hotově.</li>
   </ol>
   <p class="info">Objednávky posílám přes Zásilkovnu a při nákupu nad 1&nbsp;000&nbsp;Kč máte poštovné zdarma! Ke každé objednávce navíc přidávám svou Brixton signature kartičku. 🙌</p>
   <div id="notice"></div>
@@ -654,7 +654,7 @@ function render() {
 
 /* ---------- Košík a objednávka ---------- */
 const drawer = $('drawer'), scrim = $('scrim');
-let odeslano = null, odeslanoEmail = false, chybaFormulare = '';
+let odeslano = null, odeslanoEmail = '', chybaFormulare = '';
 
 // Poštovné posílá skript (CONFIG v Code.gs). Starší skript ho neposílá – pak se řádek neukáže.
 function postovne(total, predani) {
@@ -680,7 +680,9 @@ function zavri() { drawer.hidden = true; scrim.hidden = true; document.body.styl
 function renderDrawer() {
   const body = $('drawerBody');
   if (odeslano) {
-    body.innerHTML = `<div class="done"><div class="big">Odesláno</div><p>Objednávka má číslo <code>${esc(odeslano)}</code>.<br>Kusy máš zarezervované${odeslanoEmail ? ' a shrnutí ti přišlo e-mailem' : ''}. Pošlu ti potvrzení s platebními údaji a domluvíme předání. Díky!</p><button class="add" type="button" data-close>Zpět na nabídku</button></div>`;
+    body.innerHTML = `<div class="done"><div class="big">Odesláno</div><p>Objednávka má číslo <code>${esc(odeslano)}</code>.<br>${odeslanoEmail === 'potvrzeni'
+      ? 'Kusy máš zarezervované a do e-mailu ti přišlo potvrzení s platebními údaji a QR kódem. Pošli mi prosím odpovědí na něj výdejní místo Zásilkovny. Díky!'
+      : `Kusy máš zarezervované${odeslanoEmail ? ' a shrnutí ti přišlo e-mailem' : ''}. Pošlu ti potvrzení s platebními údaji a domluvíme předání. Díky!`}</p><button class="add" type="button" data-close>Zpět na nabídku</button></div>`;
     return;
   }
   const kp = kosikPolozky();
@@ -745,7 +747,8 @@ async function odesli(e) {
     const out = await res.json();
     if (!out.ok) throw new Error(out.error || 'Neznámá chyba');
     odeslano = out.cislo;
-    odeslanoEmail = !!out.prijeti; // skript potvrdil, že zákazníkovi odešlo shrnutí
+    // Co zákazníkovi podle skriptu odešlo: u Zásilkovny rovnou potvrzení s platbou, u osobního předání shrnutí
+    odeslanoEmail = out.potvrzeni ? 'potvrzeni' : out.prijeti ? 'prijeti' : '';
     state.cart = {}; ulozKosik();
     renderDrawer();
     nacti();
