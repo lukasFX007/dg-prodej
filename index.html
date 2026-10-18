@@ -141,6 +141,10 @@ h1 em { font-style: normal; color: var(--hi); }
   display: grid; place-items: center; background: var(--band); color: var(--band-ink); font: 700 13px/1 var(--f-num);
 }
 .steps b { display: block; color: var(--ink); font-weight: 600; font-size: 14.5px; }
+.info {
+  margin: 10px 0 0; background: var(--surface); border-radius: 12px; padding: 12px 14px; box-shadow: var(--shadow);
+  border-left: 4px solid var(--band); font-size: 14px;
+}
 
 /* ---------- Banner ---------- */
 .notice {
@@ -384,6 +388,7 @@ footer .who small { font: 600 12px var(--f-num); color: var(--muted); margin-lef
     <li><b>Pošli poptávku</b>Kusy se ti hned zarezervují, ostatní uvidí „Rezervováno“.</li>
     <li><b>Domluvíme se</b>Ozvu se e-mailem kvůli platbě a předání – Zásilkovna, osobně nebo na turnaji.</li>
   </ol>
+  <p class="info">Objednávky posílám přes Zásilkovnu a při nákupu nad 1&nbsp;000&nbsp;Kč máte poštovné zdarma! Ke každé objednávce navíc přidávám svou Brixton signature kartičku. 🙌</p>
   <div id="notice"></div>
   <div id="list"></div>
 </main>
@@ -713,7 +718,7 @@ function renderDrawer() {
         <label><span>E-mail</span><input class="field" id="f-email" name="email" type="email" autocomplete="email" value="${esc(d.email)}"></label>
         <label><span>Telefon <span class="opt">· nepovinné</span></span><input class="field" id="f-telefon" name="telefon" type="tel" autocomplete="tel" value="${esc(d.telefon)}"></label>
       </div>
-      <label><span>Předání</span>
+      <label><span>Předání <span class="opt">· Zásilkovna 89 Kč, nad 1 000 Kč zdarma</span></span>
         <select class="field" id="f-predani" name="predani">
           ${['Osobně nebo na turnaji', 'Zásilkovna'].map(o => `<option ${d.predani === o ? 'selected' : ''}>${o}</option>`).join('')}
         </select>
