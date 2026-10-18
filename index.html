@@ -4,12 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Jakub Semerád – prodej</title>
-<meta name="description" content="Prodej disků a oblečení Jakuba Semeráda. Latitude 64, Westside, Dynamic Discs – nové i podepsané kusy, poptávka online.">
+<meta name="description" content="Prodej disků a oblečení Jakuba Semeráda. Latitude 64, Westside, Dynamic Discs – nové i podepsané kusy, objednávka online.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Jakub Semerád – prodej disků">
+<meta property="og:description" content="Disky a oblečení – nové i podepsané kusy. Zásilkovnou, nad 1 000 Kč poštovné zdarma.">
+<meta property="og:image" content="https://lukasfx007.github.io/dg-prodej/foto/radek-7.jpg">
+<meta property="og:url" content="https://lukasfx007.github.io/dg-prodej/">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Instrument+Sans:wght@400;500;600&family=Azeret+Mono:wght@500;700&display=swap">
 <style>
-/* Layout: zelený „tee sign“ pás nahoře, pod ním filtry a mřížka karet disků; poptávka se vysune zprava. */
+/* Layout: zelený „tee sign“ pás nahoře, pod ním filtry a mřížka karet disků; košík se vysune zprava. */
 :root {
   --bg: #edf1ea;
   --surface: #ffffff;
@@ -249,7 +255,7 @@ main { padding-block: 8px 120px; }
 .cartbar .count { font: 700 14px var(--f-num); background: var(--hi-ink); color: var(--hi); border-radius: 999px; padding: 3px 9px; }
 .cartbar .sum { font-family: var(--f-num); font-weight: 700; }
 
-/* ---------- Poptávka (šuplík) ---------- */
+/* ---------- Košík (šuplík) ---------- */
 .scrim { position: fixed; inset: 0; background: rgb(8 14 10 / .5); z-index: 40; }
 .drawer {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: min(460px, 100%);
@@ -274,6 +280,7 @@ main { padding-block: 8px 120px; }
 .qty b { font: 700 14px var(--f-num); min-width: 22px; text-align: center; }
 .total { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 2px; border-top: 1px solid var(--line); padding-top: 12px; }
 .total b { font: 700 24px var(--f-num); }
+.ship { display: flex; justify-content: space-between; padding: 0 2px 8px; font-size: 14px; color: var(--muted); }
 form { display: flex; flex-direction: column; gap: 12px; }
 label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; }
 label .opt { font-weight: 400; color: var(--muted); }
@@ -384,8 +391,8 @@ footer .who small { font: 600 12px var(--f-num); color: var(--muted); margin-lef
 
 <main class="wrap">
   <ol class="steps">
-    <li><b>Vyber si</b>Přidej disky do poptávky. Nic neplatíš předem.</li>
-    <li><b>Pošli poptávku</b>Kusy se ti hned zarezervují. E-mailem ti pošlu potvrzení s QR kódem na zaplacení.</li>
+    <li><b>Vyber si</b>Přidej disky do košíku. Nic neplatíš předem.</li>
+    <li><b>Pošli objednávku</b>Kusy se ti hned zarezervují. E-mailem ti pošlu potvrzení s QR kódem na zaplacení.</li>
     <li><b>Zaplať a je to tvoje</b>Po zaplacení posílám Zásilkovnou, nebo si to předáme osobně či na turnaji.</li>
   </ol>
   <p class="info">Objednávky posílám přes Zásilkovnu a při nákupu nad 1&nbsp;000&nbsp;Kč máte poštovné zdarma! Ke každé objednávce navíc přidávám svou Brixton signature kartičku. 🙌</p>
@@ -403,7 +410,7 @@ footer .who small { font: 600 12px var(--f-num); color: var(--muted); margin-lef
 <div class="cartbar" id="cartbar" hidden>
   <button type="button" id="openCart">
     <span class="count" id="cartCount">0</span>
-    <span>Moje poptávka</span>
+    <span>Košík</span>
     <span class="sum" id="cartSum">0 Kč</span>
   </button>
 </div>
@@ -411,7 +418,7 @@ footer .who small { font: 600 12px var(--f-num); color: var(--muted); margin-lef
 <div class="scrim" id="scrim" hidden></div>
 <aside class="drawer" id="drawer" hidden aria-labelledby="drawerTitle" role="dialog" aria-modal="true">
   <div class="drawer-h">
-    <h2 id="drawerTitle">Poptávka</h2>
+    <h2 id="drawerTitle">Košík</h2>
     <button class="x" type="button" id="closeCart" aria-label="Zavřít">×</button>
   </div>
   <div class="drawer-b" id="drawerBody"></div>
@@ -419,51 +426,9 @@ footer .who small { font: 600 12px var(--f-num); color: var(--muted); margin-lef
 
 <script>
 /* ============================================================
-   NASTAVENÍ – sem vlož adresu webové aplikace z Apps Scriptu
-   (končí na /exec). Dokud je prázdná, web ukazuje ukázková data.
+   NASTAVENÍ – adresa webové aplikace z Apps Scriptu (končí na /exec)
    ============================================================ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbz-ZhgVae18aY8c9MUE6akwweTd2CHo06E5kyq0jFkegQbhB1KZCl_xj8T1w7iSGc_c9A/exec';
-
-/* Záložní data – kopie tabulky ze 17. 10. 2026. Fotky jsou ve složce foto/ (radek-<číslo řádku>.jpg). */
-const L = 'Latitude 64', W = 'West side Discs', D = 'Dynamic Discs';
-const UKAZKA = [
-  [4, 'Kristin Lätt', 'Momentum Polo', 'Nový', '', 1, '', 'S', 899],
-  [5, 'DGPT', 'Barbasol Open at Austin', 'Nový', '', 1, '', 'L', 499],
-  [6, W, 'VIP - X Stag      11 6 -1 2', 'Nový', '173g', 1, '', '', 499],
-  [7, L, 'Gold Orbit Saint Pro          8 5 -0,5 2', 'Nový', '168g', 1, 'Kristin Lätt', '', 599],
-  [8, L, 'Opto Ice Orbit Ballista Pro      14 4 0 3', 'Nový', '173g', 1, '', '', 499],
-  [9, D, 'Hybrid - X Getaway Mason Ford           9 5 -0,5 3', '9/10', '176g', 1, 'Jakub Semerád na rimu', '', 399],
-  [10, W, 'VIP Orbit Ice Harp                4 3 0 3', 'Nový', '174g, 175g', 2, '', '', 499],
-  [11, W, 'VIP Orbit Ice Harp                4 3 0 3', 'Nový', '174g', 2, '', '', 499],
-  [12, W, 'VIP Moonshine Harp Ricky Wysocki           4 3 0 3', 'Nový', '173g', 1, '', '', 499],
-  [13, D, 'Supreme Trespass First Run                     12 5 -0,5 2', 'Nový', '173g', 1, '', '', 499],
-  [14, D, 'Fuzion Orbit Felon                     9 3 0,5 4', 'Nový', '173g', 1, '', '', 499],
-  [15, L, 'Grand Rive      13 5 0 3.5', 'Nový', '175g', 1, '', '', 499],
-  [16, L, 'Opto Trident      6 4 -0,5 3', 'Nový', '175g', 1, '', '', 499],
-  [17, W, 'VIP Shield               3 3 0 1', 'Nový', '175g', 1, '', '', 499],
-  [18, L, 'Opto Compass      5 5 0 1', 'Nový', '179g', 1, '', '', 499],
-  [19, L, 'Prototype Mighty             7 5 -1 2', '9/10', '173g', 1, 'Semerád na rimu', '', 449],
-  [20, L, 'Opto Ice Beetle                 1 7 -1 0', '9/10', '146g', 1, '', '', 399],
-  [21, L, 'Grand Grace      11 6 -1 2', 'Nový', '174g - 175g', 5, '', '', 599],
-  [22, L, 'Grand Grace      11 6 -1 2', 'Nový', '174g - 175g', 6, '', '', 599],
-  [23, L, 'Opto-Ice Orbit Pure                  3 3 -1 1', 'Nový', '174g, 175g', 2, '', '', 599],
-  [24, L, 'Opto-Ice Orbit Pure                  3 3 -1 1', 'Nový', '175g', 1, '', '', 599],
-  [25, L, 'Opto-Ice Orbit Pure                  3 3 -1 1', 'Nový', '174g, 176g', 2, '', '', 599],
-  [26, L, 'Opto-Ice Orbit Pure                  3 3 -1 1', 'Nový', '174g', 1, '', '', 599],
-  [27, L, 'Opto Diamond      8 6 -3 1', 'Nový', '160g, 161g', 2, '', '', 599],
-  [28, L, 'Opto Diamond      8 6 -3 1', 'Nový', '160g, 161g', 2, '', '', 599],
-  [29, L, 'Opto Diamond      8 6 -3 1', 'Nový', '163g', 1, '', '', 599],
-  [30, L, 'Grand Grace      11 6 -1 2', 'Nový', '173g, 175g', 2, '', '', 599],
-  [31, L, 'Grand Grace      11 6 -1 2', 'Nový', '173g', 2, '', '', 599],
-  [32, L, 'Grand Grace      11 6 -1 2', 'Nový', '173g', 2, '', '', 599],
-  [33, L, 'Grand Rive      13 5 0 3.5', 'Nový', '173g - 175g', 10, '', '', 599],
-  [34, L, 'Grand Rive      13 5 0 3.5', 'Nový', '173g - 175g', 11, '', '', 599],
-  [35, L, 'Grand Rive      13 5 0 3.5', 'Nový', '174g, 175g', 7, '', '', 599],
-  [36, L, 'Grand Rive      13 5 0 3.5', 'Nový', '175g', 2, '', '', 599],
-  [37, W, 'Tournament Warhorse      13 4 0 4', 'Nový', '170g, 172g', 3, '', '', 399],
-  [38, L, 'Grand Grace      11 6 -1 2', 'Nový', '175g', 1, '', '', 599],
-].map(([id, znacka, produkt, stav, vaha, ks, podpis, velikost, cena]) =>
-  ({ id, znacka, produkt, stav, vaha, ks, podpis, velikost, cena, rezervovano: 0, prodano: 0, foto: '' }));
 
 const KATEGORIE = [
   { id: 'all', nazev: 'Vše' },
@@ -478,7 +443,7 @@ const KATEGORIE = [
 const jeMuj = p => /semer/i.test(p.podpis || '');
 const NAZEV_SEKCE = { driver: 'Distance drivery', fairway: 'Fairway drivery', mid: 'Midrange', putter: 'Puttery & approach', obleceni: 'Oblečení' };
 
-const state = { items: [], kat: 'all', avail: 'all', q: '', sort: 'default', cart: nactiKosik(), demo: !API_URL, updated: null };
+const state = { items: [], kat: 'all', avail: 'all', q: '', sort: 'default', cart: nactiKosik(), updated: null, postovne: null };
 
 /* ---------- Data ---------- */
 function rozeber(produkt) {
@@ -510,17 +475,12 @@ function priprav(raw) {
 }
 
 async function nacti() {
-  if (!API_URL) {
-    state.items = priprav(UKAZKA);
-    state.updated = null;
-    render();
-    return;
-  }
   try {
     const res = await fetch(API_URL, { cache: 'no-store' });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Neznámá chyba');
     state.items = priprav(data.items);
+    state.postovne = data.postovne || null;
     state.updated = data.updated ? new Date(data.updated) : new Date();
     state.chyba = null;
   } catch (e) {
@@ -603,9 +563,9 @@ function karta(p) {
     : `<div class="stock ok">${p.ks > 1 ? `Volné ${p.volne} z ${p.ks} ks` : 'Skladem 1 ks'}</div>`;
   let btn;
   if (p.status !== 'free') btn = `<button class="add" type="button" disabled>${p.status === 'sold' ? 'Prodáno' : 'Rezervováno'}</button>`;
-  else if (v && p.volne > 1) btn = `<div class="qty card-qty" role="group" aria-label="Počet v poptávce"><button type="button" data-dec="${p.id}" aria-label="Ubrat">−</button><b>${v} ks</b><button type="button" data-inc="${p.id}" aria-label="Přidat" ${v >= p.volne ? 'disabled' : ''}>+</button></div>`;
-  else if (v) btn = `<button class="add in" type="button" data-remove="${p.id}" aria-label="Odebrat z poptávky">V poptávce<span class="rm" aria-hidden="true">×</span></button>`;
-  else btn = `<button class="add" type="button" data-add="${p.id}">Přidat do poptávky</button>`;
+  else if (v && p.volne > 1) btn = `<div class="qty card-qty" role="group" aria-label="Počet v košíku"><button type="button" data-dec="${p.id}" aria-label="Ubrat">−</button><b>${v} ks</b><button type="button" data-inc="${p.id}" aria-label="Přidat" ${v >= p.volne ? 'disabled' : ''}>+</button></div>`;
+  else if (v) btn = `<button class="add in" type="button" data-remove="${p.id}" aria-label="Odebrat z košíku">V košíku<span class="rm" aria-hidden="true">×</span></button>`;
+  else btn = `<button class="add" type="button" data-add="${p.id}">Do košíku</button>`;
 
   return `<article class="card ${p.status === 'sold' ? 'is-sold' : ''}">
     <div class="media ${p.foto ? 'has-img' : ''}">${media}<div class="tags">${tags.join('')}</div>${ribbon}</div>
@@ -655,7 +615,6 @@ function render() {
 
   let notice = '';
   if (state.chyba) notice = `<div class="notice err">${esc(state.chyba)} <button type="button" data-reload>Zkusit znovu</button></div>`;
-  else if (state.demo) notice = '<div class="notice">Ukázka: data jsou zkopírovaná z tabulky ze 17. 10. 2026. Web zatím není napojený na Google Sheet, takže poptávky se neodesílají.</div>';
   $('notice').innerHTML = notice;
 
   const list = filtrovane();
@@ -681,9 +640,27 @@ function render() {
   $('updated').textContent = state.updated ? 'Stav nabídky aktualizován ' + state.updated.toLocaleString('cs-CZ') : '';
 }
 
-/* ---------- Poptávka ---------- */
+/* ---------- Košík a objednávka ---------- */
 const drawer = $('drawer'), scrim = $('scrim');
-let odeslano = null, chybaFormulare = '';
+let odeslano = null, odeslanoEmail = false, chybaFormulare = '';
+
+// Poštovné posílá skript (CONFIG v Code.gs). Starší skript ho neposílá – pak se řádek neukáže.
+function postovne(total, predani) {
+  const z = state.postovne;
+  if (!z || predani !== 'Zásilkovna') return null;
+  return z.zdarmaOd && total >= z.zdarmaOd ? 0 : z.zasilkovna;
+}
+function souhrnHtml(total, predani) {
+  const po = postovne(total, predani);
+  if (po === null) return `<div class="total"><span>Celkem</span><b>${kc(total)}</b></div>`;
+  return `<div class="ship"><span>Poštovné (Zásilkovna)</span><span>${po ? kc(po) : 'zdarma'}</span></div>
+    <div class="total"><span>Celkem</span><b>${kc(total + po)}</b></div>`;
+}
+function postovneInfo() {
+  const z = state.postovne;
+  if (!z || !z.zasilkovna) return '';
+  return ` <span class="opt">· Zásilkovna ${kc(z.zasilkovna)}${z.zdarmaOd ? `, od ${kc(z.zdarmaOd)} zdarma` : ''}</span>`;
+}
 
 function otevri() { drawer.hidden = false; scrim.hidden = false; document.body.style.overflow = 'hidden'; renderDrawer(); render(); $('closeCart').focus(); }
 function zavri() { drawer.hidden = true; scrim.hidden = true; document.body.style.overflow = ''; odeslano = null; chybaFormulare = ''; render(); }
@@ -691,12 +668,12 @@ function zavri() { drawer.hidden = true; scrim.hidden = true; document.body.styl
 function renderDrawer() {
   const body = $('drawerBody');
   if (odeslano) {
-    body.innerHTML = `<div class="done"><div class="big">Odesláno</div><p>Poptávka má číslo <code>${esc(odeslano)}</code>.<br>Kusy máš zarezervované. Ozvu se ti kvůli platbě a předání. Díky!</p><button class="add" type="button" data-close>Zpět na nabídku</button></div>`;
+    body.innerHTML = `<div class="done"><div class="big">Odesláno</div><p>Objednávka má číslo <code>${esc(odeslano)}</code>.<br>Kusy máš zarezervované${odeslanoEmail ? ' a shrnutí ti přišlo e-mailem' : ''}. Pošlu ti potvrzení s platebními údaji a domluvíme předání. Díky!</p><button class="add" type="button" data-close>Zpět na nabídku</button></div>`;
     return;
   }
   const kp = kosikPolozky();
   if (!kp.length) {
-    body.innerHTML = '<div class="done"><p>Poptávka je prázdná. Přidej disky tlačítkem „Přidat do poptávky“.</p><button class="add" type="button" data-close>Zpět na nabídku</button></div>';
+    body.innerHTML = '<div class="done"><p>Košík je prázdný. Přidej disky tlačítkem „Do košíku“.</p><button class="add" type="button" data-close>Zpět na nabídku</button></div>';
     return;
   }
   const total = kp.reduce((s, x) => s + x.ks * x.p.cena, 0);
@@ -711,14 +688,14 @@ function renderDrawer() {
         <div class="qty"><button type="button" data-dec="${p.id}" aria-label="Ubrat">−</button><b>${ks}</b><button type="button" data-inc="${p.id}" aria-label="Přidat" ${ks >= p.volne ? 'disabled' : ''}>+</button></div>
       </div>`).join('')}
     </div>
-    <div class="total"><span>Celkem</span><b>${kc(total)}</b></div>
+    <div id="souhrn">${souhrnHtml(total, d.predani || 'Osobně nebo na turnaji')}</div>
     <form id="form" novalidate>
       <label><span>Jméno a příjmení</span><input class="field" id="f-jmeno" name="jmeno" autocomplete="name" required value="${esc(d.jmeno)}"></label>
       <div class="row2">
         <label><span>E-mail</span><input class="field" id="f-email" name="email" type="email" autocomplete="email" value="${esc(d.email)}"></label>
         <label><span>Telefon <span class="opt">· nepovinné</span></span><input class="field" id="f-telefon" name="telefon" type="tel" autocomplete="tel" value="${esc(d.telefon)}"></label>
       </div>
-      <label><span>Předání <span class="opt">· Zásilkovna 89 Kč, nad 1 000 Kč zdarma</span></span>
+      <label><span>Předání${postovneInfo()}</span>
         <select class="field" id="f-predani" name="predani">
           ${['Osobně nebo na turnaji', 'Zásilkovna'].map(o => `<option ${d.predani === o ? 'selected' : ''}>${o}</option>`).join('')}
         </select>
@@ -726,8 +703,8 @@ function renderDrawer() {
       <label><span>Poznámka <span class="opt">· nepovinné</span></span><textarea class="field" id="f-poznamka" name="poznamka" placeholder="Např. preferovaná váha nebo barva">${esc(d.poznamka)}</textarea></label>
       <div class="hp" aria-hidden="true"><label>Web<input id="f-web" name="web" tabindex="-1" autocomplete="off"></label></div>
       ${chybaFormulare ? `<div class="msg err" role="alert">${esc(chybaFormulare)}</div>` : ''}
-      <button class="send" type="submit" id="send">${state.demo ? 'Odeslat (ukázka)' : 'Odeslat poptávku'}</button>
-      <p class="fine">Poptávka je nezávazná. Kusy se ti zarezervují a já ti pošlu potvrzení s dotazem na adresu a platbu.</p>
+      <button class="send" type="submit" id="send">Odeslat objednávku</button>
+      <p class="fine">Kusy se ti zarezervují a já ti pošlu potvrzení s platebními údaji. Jméno a kontakt použiju jen k vyřízení objednávky.</p>
     </form>`;
 }
 
@@ -746,7 +723,6 @@ async function odesli(e) {
   else if (!emailOk && !d.telefon?.trim()) chybaFormulare = 'Zadej e-mail nebo telefon, ať se ti můžu ozvat.';
   else chybaFormulare = '';
   if (chybaFormulare) { renderDrawer(); return; }
-  if (state.demo) { chybaFormulare = 'Tohle je ukázka bez napojení na tabulku, poptávka se neodeslala.'; renderDrawer(); return; }
 
   const btn = $('send');
   btn.disabled = true; btn.textContent = 'Odesílám…';
@@ -756,12 +732,13 @@ async function odesli(e) {
     const out = await res.json();
     if (!out.ok) throw new Error(out.error || 'Neznámá chyba');
     odeslano = out.cislo;
+    odeslanoEmail = !!out.prijeti; // skript potvrdil, že zákazníkovi odešlo shrnutí
     state.cart = {}; ulozKosik();
     renderDrawer();
     nacti();
   } catch (err) {
     chybaFormulare = err.message.startsWith('Tyhle') || err.message.startsWith('Vyplň') || err.message.startsWith('Zadej')
-      ? err.message : 'Poptávku se nepodařilo odeslat: ' + err.message + '. Zkus to prosím znovu.';
+      ? err.message : 'Objednávku se nepodařilo odeslat: ' + err.message + '. Zkus to prosím znovu.';
     renderDrawer();
     nacti();
   }
@@ -792,10 +769,15 @@ $('closeCart').addEventListener('click', zavri);
 scrim.addEventListener('click', zavri);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !drawer.hidden) zavri(); });
 $('drawerBody').addEventListener('submit', odesli);
+$('drawerBody').addEventListener('change', e => {
+  if (e.target.id !== 'f-predani') return;
+  const total = kosikPolozky().reduce((s, x) => s + x.ks * x.p.cena, 0);
+  $('souhrn').innerHTML = souhrnHtml(total, e.target.value);
+});
 
 nacti();
 // Obnovit stav, když se člověk vrátí na stránku (ať vidí, co mezitím někdo koupil)
-document.addEventListener('visibilitychange', () => { if (!document.hidden && API_URL) nacti(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) nacti(); });
 </script>
 </body>
 </html>
