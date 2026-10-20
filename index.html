@@ -203,7 +203,6 @@ main { padding-block: 8px 120px; }
   text-transform: uppercase; letter-spacing: .06em; padding: 7px 10px; border-radius: 6px; color: #fff;
 }
 .ribbon.sold { background: #3c4440; }
-.ribbon.res { background: var(--warn); }
 
 .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
 .brand { font: 600 12px/1 var(--f-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
@@ -223,7 +222,6 @@ main { padding-block: 8px 120px; }
 .price small { font-size: 13px; font-weight: 500; margin-left: 2px; }
 .stock { font-size: 12.5px; margin-top: 4px; }
 .stock.ok { color: var(--ok); }
-.stock.res { color: var(--warn); }
 .stock.sold { color: var(--sold); }
 
 .add {
@@ -465,7 +463,8 @@ function priprav(raw) {
     const ks = Math.max(1, +r.ks || 1);
     const prodano = Math.max(0, +r.prodano || 0), rezervovano = Math.max(0, +r.rezervovano || 0);
     const volne = Math.max(0, ks - prodano - rezervovano);
-    const stav = volne > 0 ? 'free' : prodano >= ks ? 'sold' : 'res';
+    // Zákazník vidí jen volné / prodané – zarezervované kusy se počítají jako prodané (po zrušení objednávky se vrátí)
+    const stav = volne > 0 ? 'free' : 'sold';
     // Fotka z tabulky (sloupec Foto URL) má přednost, jinak lokální kopie vytažená z exportu .xlsx
     const foto = r.foto || `foto/radek-${r.id}.jpg`;
     const p = { ...r, foto, ks, prodano, rezervovano, volne, nazev, flight, status: stav };
@@ -560,7 +559,7 @@ function karta(p) {
   tags.push(`<span class="tag">${p.stav && p.stav.toLowerCase() !== 'nový' ? 'Použitý ' + esc(p.stav) : 'Nový'}</span>`);
   if (jeMuj(p)) tags.push(`<span class="tag own" title="${esc(p.podpis)}">Můj podpis na rimu</span>`);
   else if (p.podpis) tags.push(`<span class="tag sig" title="Podpis">Podpis: ${esc(p.podpis)}</span>`);
-  const ribbon = p.status === 'sold' ? '<span class="ribbon sold">Prodáno</span>' : p.status === 'res' ? '<span class="ribbon res">Rezervováno</span>' : '';
+  const ribbon = p.status === 'sold' ? '<span class="ribbon sold">Prodáno</span>' : '';
   const zastupce = `<div class="disc ${p.kat === 'obleceni' ? 'shirt' : ''}"><i>Bez fotky</i></div>`;
   const media = p.foto
     ? `<img class="${p.kat === 'obleceni' ? 'full' : ''}" src="${esc(p.foto)}" alt="${esc(p.znacka + ' ' + p.nazev)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('has-img');this.outerHTML=this.dataset.fallback" data-fallback="${esc(zastupce)}">`
@@ -572,10 +571,9 @@ function karta(p) {
   if (p.vaha) meta.push(`<span>Váha <b>${esc(p.vaha)}</b></span>`);
   if (p.velikost) meta.push(`<span>Velikost <b>${esc(p.velikost)}</b></span>`);
   const stock = p.status === 'sold' ? '<div class="stock sold">Prodáno</div>'
-    : p.status === 'res' ? '<div class="stock res">Zarezervováno, čeká na předání</div>'
-    : `<div class="stock ok">${p.ks > 1 ? `Volné ${p.volne} z ${p.ks} ks` : 'Skladem 1 ks'}</div>`;
+    : `<div class="stock ok">Skladem ${p.volne} ks</div>`;
   let btn;
-  if (p.status !== 'free') btn = `<button class="add" type="button" disabled>${p.status === 'sold' ? 'Prodáno' : 'Rezervováno'}</button>`;
+  if (p.status !== 'free') btn = `<button class="add" type="button" disabled>Prodáno</button>`;
   else if (v && p.volne > 1) btn = `<div class="qty card-qty" role="group" aria-label="Počet v košíku"><button type="button" data-dec="${p.id}" aria-label="Ubrat">−</button><b>${v} ks</b><button type="button" data-inc="${p.id}" aria-label="Přidat" ${v >= p.volne ? 'disabled' : ''}>+</button></div>`;
   else if (v) btn = `<button class="add in" type="button" data-remove="${p.id}" aria-label="Odebrat z košíku">V košíku<span class="rm" aria-hidden="true">×</span></button>`;
   else btn = `<button class="add" type="button" data-add="${p.id}">Do košíku</button>`;
