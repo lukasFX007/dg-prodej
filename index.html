@@ -658,11 +658,16 @@ function render() {
 const drawer = $('drawer'), scrim = $('scrim');
 let odeslano = null, odeslanoEmail = '', chybaFormulare = '';
 
+const PREDANI = ['Osobně nebo na turnaji', 'Zásilkovna – výdejní místo', 'Zásilkovna – na adresu'];
+const jeZasilkovna = predani => /^Zásilkovna/.test(predani || '');
+const jeNaAdresu = predani => predani === PREDANI[2];
+
 // Poštovné posílá skript (CONFIG v Code.gs). Starší skript ho neposílá – pak se řádek neukáže.
 function postovne(total, predani) {
   const z = state.postovne;
-  if (!z || predani !== 'Zásilkovna') return null;
-  return z.zdarmaOd && total >= z.zdarmaOd ? 0 : z.zasilkovna;
+  if (!z || !jeZasilkovna(predani)) return null;
+  if (z.zdarmaOd && total >= z.zdarmaOd) return 0;
+  return jeNaAdresu(predani) ? z.naAdresu ?? z.zasilkovna : z.zasilkovna;
 }
 function souhrnHtml(total, predani) {
   const po = postovne(total, predani);
@@ -673,7 +678,14 @@ function souhrnHtml(total, predani) {
 function postovneInfo() {
   const z = state.postovne;
   if (!z || !z.zasilkovna) return '';
-  return ` <span class="opt">· Zásilkovna ${kc(z.zasilkovna)}${z.zdarmaOd ? `, od ${kc(z.zdarmaOd)} zdarma` : ''}</span>`;
+  const domu = z.naAdresu && z.naAdresu !== z.zasilkovna ? `, domů ${kc(z.naAdresu)}` : '';
+  return ` <span class="opt">· Zásilkovna ${kc(z.zasilkovna)}${domu}${z.zdarmaOd ? `, od ${kc(z.zdarmaOd)} zdarma` : ''}</span>`;
+}
+// Popisek a nápověda pole „Kam poslat“ podle zvoleného předání
+function adresaPopis(predani) {
+  return jeNaAdresu(predani)
+    ? ['Adresa doručení', 'Ulice a číslo, PSČ, město']
+    : ['Výdejní místo nebo Z-BOX', 'Název nebo adresa výdejního místa či Z-BOXu Zásilkovny'];
 }
 
 function otevri() { drawer.hidden = false; scrim.hidden = false; document.body.style.overflow = 'hidden'; renderDrawer(); render(); $('closeCart').focus(); }
@@ -683,7 +695,7 @@ function renderDrawer() {
   const body = $('drawerBody');
   if (odeslano) {
     body.innerHTML = `<div class="done"><div class="big">Odesláno</div><p>Objednávka má číslo <code>${esc(odeslano)}</code>.<br>${odeslanoEmail === 'potvrzeni'
-      ? 'Kusy máš zarezervované a do e-mailu ti přišlo potvrzení s platebními údaji a QR kódem. Pošli mi prosím odpovědí na něj výdejní místo Zásilkovny. Díky!'
+      ? 'Kusy máš zarezervované a do e-mailu ti přišlo potvrzení s platebními údaji a QR kódem. Po zaplacení balík pošlu Zásilkovnou. Díky!'
       : `Kusy máš zarezervované${odeslanoEmail ? ' a shrnutí ti přišlo e-mailem' : ''}. Pošlu ti potvrzení s platebními údaji a domluvíme předání. Díky!`}</p><button class="add" type="button" data-close>Zpět na nabídku</button></div>`;
     return;
   }
@@ -695,6 +707,8 @@ function renderDrawer() {
   }
   const total = kp.reduce((s, x) => s + x.ks * x.p.cena, 0);
   const d = nactiFormular();
+  const zasilkovna = jeZasilkovna(d.predani);
+  const [adresaNadpis, adresaNapoveda] = adresaPopis(d.predani);
   body.innerHTML = zmeny + `
     <div class="lines">${kp.map(({ p, ks }) => `
       <div class="line">
@@ -710,13 +724,14 @@ function renderDrawer() {
       <label><span>Jméno a příjmení</span><input class="field" id="f-jmeno" name="jmeno" autocomplete="name" required value="${esc(d.jmeno)}"></label>
       <div class="row2">
         <label><span>E-mail</span><input class="field" id="f-email" name="email" type="email" autocomplete="email" value="${esc(d.email)}"></label>
-        <label><span>Telefon <span class="opt">· nepovinné</span></span><input class="field" id="f-telefon" name="telefon" type="tel" autocomplete="tel" value="${esc(d.telefon)}"></label>
+        <label><span>Telefon <span class="opt" id="tel-opt">${telefonInfo(zasilkovna)}</span></span><input class="field" id="f-telefon" name="telefon" type="tel" autocomplete="tel" value="${esc(d.telefon)}"></label>
       </div>
       <label><span>Předání${postovneInfo()}</span>
         <select class="field" id="f-predani" name="predani">
-          ${['Osobně nebo na turnaji', 'Zásilkovna'].map(o => `<option ${d.predani === o ? 'selected' : ''}>${o}</option>`).join('')}
+          ${PREDANI.map(o => `<option ${d.predani === o ? 'selected' : ''}>${o}</option>`).join('')}
         </select>
       </label>
+      <label id="adresa" ${zasilkovna ? '' : 'hidden'}><span id="adresa-nadpis">${adresaNadpis}</span><textarea class="field" id="f-adresa" name="adresa" rows="2" placeholder="${adresaNapoveda}">${esc(d.adresa)}</textarea></label>
       <label><span>Poznámka <span class="opt">· nepovinné</span></span><textarea class="field" id="f-poznamka" name="poznamka" placeholder="Např. preferovaná váha nebo barva">${esc(d.poznamka)}</textarea></label>
       <div class="hp" aria-hidden="true"><label>Web<input id="f-web" name="web" tabindex="-1" autocomplete="off"></label></div>
       ${chybaFormulare ? `<div class="msg err" role="alert">${esc(chybaFormulare)}</div>` : ''}
@@ -725,19 +740,31 @@ function renderDrawer() {
     </form>`;
 }
 
+function telefonInfo(zasilkovna) {
+  return zasilkovna ? '· povinné, přijde na něj avízo' : '· nepovinné';
+}
+
 function nactiFormular() {
   const f = $('form');
   if (f) return Object.fromEntries(new FormData(f));
-  try { return JSON.parse(localStorage.getItem('dg-kontakt') || '{}'); } catch (_) { return {}; }
+  try {
+    const d = JSON.parse(localStorage.getItem('dg-kontakt') || '{}');
+    if (d.predani === 'Zásilkovna') d.predani = PREDANI[1]; // uloženo před rozdělením Zásilkovny na dvě volby
+    return d;
+  } catch (_) { return {}; }
 }
 
 async function odesli(e) {
   e.preventDefault();
   const d = nactiFormular();
-  try { localStorage.setItem('dg-kontakt', JSON.stringify({ jmeno: d.jmeno, email: d.email, telefon: d.telefon, predani: d.predani })); } catch (_) {}
+  try { localStorage.setItem('dg-kontakt', JSON.stringify({ jmeno: d.jmeno, email: d.email, telefon: d.telefon, predani: d.predani, adresa: d.adresa })); } catch (_) {}
   const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email || '');
+  const zasilkovna = jeZasilkovna(d.predani), domu = jeNaAdresu(d.predani);
   if (!d.jmeno?.trim()) chybaFormulare = 'Vyplň jméno.';
   else if (!emailOk && !d.telefon?.trim()) chybaFormulare = 'Zadej e-mail nebo telefon, ať se ti můžu ozvat.';
+  else if (zasilkovna && (d.telefon || '').replace(/\D/g, '').length < 9) chybaFormulare = 'Zadej telefon – u Zásilkovny na něj přijde avízo o balíku.';
+  else if (zasilkovna && !d.adresa?.trim()) chybaFormulare = domu ? 'Vyplň adresu, kam balík poslat.' : 'Vyplň výdejní místo Zásilkovny.';
+  else if (domu && !/\d{3}\s?\d{2}/.test(d.adresa)) chybaFormulare = 'Vyplň v adrese i PSČ.';
   else chybaFormulare = '';
   if (chybaFormulare) { renderDrawer(); return; }
 
@@ -794,6 +821,12 @@ $('drawerBody').addEventListener('change', e => {
   if (e.target.id !== 'f-predani') return;
   const total = kosikPolozky().reduce((s, x) => s + x.ks * x.p.cena, 0);
   $('souhrn').innerHTML = souhrnHtml(total, e.target.value);
+  const zasilkovna = jeZasilkovna(e.target.value);
+  const [nadpis, napoveda] = adresaPopis(e.target.value);
+  $('adresa').hidden = !zasilkovna;
+  $('adresa-nadpis').textContent = nadpis;
+  $('f-adresa').placeholder = napoveda;
+  $('tel-opt').textContent = telefonInfo(zasilkovna);
 });
 
 nacti();
