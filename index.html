@@ -731,6 +731,8 @@ function telefonInfo(zasilkovna) {
 }
 
 // Mapa výdejních míst – oficiální widget Zásilkovny s klíčem z listu Nastavení. Knihovna se načte až po kliknutí.
+// Nastavení z konfigurátoru widgetu na zasilkovna.cz: Z-BOXy a výdejní místa v ČR, mapa v modálním okně
+const PACKETA_MOZNOSTI = { language: 'cs', view: 'modal', vendors: [{ country: 'cz', group: 'zbox' }, { country: 'cz' }] };
 let packetaKnihovna = null;
 function vyberMisto() {
   packetaKnihovna ||= new Promise((ok, chyba) => {
@@ -746,7 +748,7 @@ function vyberMisto() {
     const misto = bod.name || bod.formatedValue || '';
     const mesto = [bod.zip, bod.city].filter(Boolean).join(' ');
     f.value = (mesto && !misto.includes(mesto) ? misto + ', ' + mesto : misto) + (bod.id ? ` (ID ${bod.id})` : '');
-  }, { country: 'cz', language: 'cs' }), () => {
+  }, PACKETA_MOZNOSTI), () => {
     chybaFormulare = 'Mapu Zásilkovny se nepodařilo načíst. Napiš výdejní místo ručně.';
     renderDrawer();
   });
