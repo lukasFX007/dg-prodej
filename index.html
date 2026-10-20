@@ -129,9 +129,6 @@ h1 em { font-style: normal; color: var(--hi); }
   border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 11px; font-size: 14px;
 }
 .search { width: 190px; max-width: 100%; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
-.seg button { border: 0; background: none; padding: 8px 12px; font-size: 14px; }
-.seg button[aria-pressed="true"] { background: var(--surface-2); font-weight: 600; box-shadow: inset 0 -2px 0 var(--hi); }
 
 /* ---------- Jak to funguje ---------- */
 .steps {
@@ -174,8 +171,6 @@ main { padding-block: 8px 120px; }
   background: var(--surface); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow);
   display: flex; flex-direction: column; min-width: 0; position: relative;
 }
-.card.is-sold { opacity: .62; }
-.card.is-sold .media img, .card.is-sold .disc { filter: grayscale(1); }
 .media { aspect-ratio: 1; background: var(--surface-2); position: relative; overflow: hidden; }
 .media.has-img { background: #fff; }
 .media img { width: 100%; height: 100%; object-fit: contain; padding: 6%; transition: transform .3s ease; }
@@ -198,11 +193,6 @@ main { padding-block: 8px 120px; }
 }
 .tag.sig { background: var(--hi); color: var(--hi-ink); }
 .tag.own { background: var(--band); color: var(--band-ink); }
-.ribbon {
-  position: absolute; right: 10px; bottom: 10px; font: 800 12px/1 var(--f-display); font-stretch: 112%;
-  text-transform: uppercase; letter-spacing: .06em; padding: 7px 10px; border-radius: 6px; color: #fff;
-}
-.ribbon.sold { background: #3c4440; }
 
 .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
 .brand { font: 600 12px/1 var(--f-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
@@ -222,7 +212,6 @@ main { padding-block: 8px 120px; }
 .price small { font-size: 13px; font-weight: 500; margin-left: 2px; }
 .stock { font-size: 12.5px; margin-top: 4px; }
 .stock.ok { color: var(--ok); }
-.stock.sold { color: var(--sold); }
 
 .add {
   border: 0; background: var(--ink); color: var(--bg); border-radius: 10px; padding: 10px 14px;
@@ -371,11 +360,6 @@ footer .who small { font: 600 12px var(--f-num); color: var(--muted); margin-lef
     <div class="chips" id="cats" role="group" aria-label="Kategorie"></div>
     <div class="controls">
       <input class="field search" id="q" type="search" placeholder="Hledat disk, značku…" aria-label="Hledat">
-      <div class="seg" role="group" aria-label="Dostupnost" id="avail">
-        <button type="button" data-v="all" aria-pressed="true">Vše</button>
-        <button type="button" data-v="free" aria-pressed="false">Volné</button>
-        <button type="button" data-v="sold" aria-pressed="false">Prodané</button>
-      </div>
       <select class="field" id="sort" aria-label="Řazení">
         <option value="default">Řadit: výchozí</option>
         <option value="price-asc">Cena ↑</option>
@@ -441,7 +425,7 @@ const KATEGORIE = [
 const jeMuj = p => /semer/i.test(p.podpis || '');
 const NAZEV_SEKCE = { driver: 'Distance drivery', fairway: 'Fairway drivery', mid: 'Midrange', putter: 'Puttery & approach', obleceni: 'Oblečení' };
 
-const state = { items: [], kat: 'all', avail: 'all', q: '', sort: 'default', cart: nactiKosik(), updated: null, postovne: null };
+const state = { items: [], kat: 'all', q: '', sort: 'default', cart: nactiKosik(), updated: null, postovne: null };
 
 /* ---------- Data ---------- */
 function rozeber(produkt) {
@@ -463,7 +447,7 @@ function priprav(raw) {
     const ks = Math.max(1, +r.ks || 1);
     const prodano = Math.max(0, +r.prodano || 0), rezervovano = Math.max(0, +r.rezervovano || 0);
     const volne = Math.max(0, ks - prodano - rezervovano);
-    // Zákazník vidí jen volné / prodané – zarezervované kusy se počítají jako prodané (po zrušení objednávky se vrátí)
+    // Na webu jsou jen volné kusy – prodané i zarezervované se schovají (po zrušení objednávky se vrátí)
     const stav = volne > 0 ? 'free' : 'sold';
     // Fotka z tabulky (sloupec Foto URL) má přednost, jinak lokální kopie vytažená z exportu .xlsx
     const foto = r.foto || `foto/radek-${r.id}.jpg`;
@@ -559,7 +543,6 @@ function karta(p) {
   tags.push(`<span class="tag">${p.stav && p.stav.toLowerCase() !== 'nový' ? 'Použitý ' + esc(p.stav) : 'Nový'}</span>`);
   if (jeMuj(p)) tags.push(`<span class="tag own" title="${esc(p.podpis)}">Můj podpis na rimu</span>`);
   else if (p.podpis) tags.push(`<span class="tag sig" title="Podpis">Podpis: ${esc(p.podpis)}</span>`);
-  const ribbon = p.status === 'sold' ? '<span class="ribbon sold">Prodáno</span>' : '';
   const zastupce = `<div class="disc ${p.kat === 'obleceni' ? 'shirt' : ''}"><i>Bez fotky</i></div>`;
   const media = p.foto
     ? `<img class="${p.kat === 'obleceni' ? 'full' : ''}" src="${esc(p.foto)}" alt="${esc(p.znacka + ' ' + p.nazev)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('has-img');this.outerHTML=this.dataset.fallback" data-fallback="${esc(zastupce)}">`
@@ -570,16 +553,14 @@ function karta(p) {
   const meta = [];
   if (p.vaha) meta.push(`<span>Váha <b>${esc(p.vaha)}</b></span>`);
   if (p.velikost) meta.push(`<span>Velikost <b>${esc(p.velikost)}</b></span>`);
-  const stock = p.status === 'sold' ? '<div class="stock sold">Prodáno</div>'
-    : `<div class="stock ok">Skladem ${p.volne} ks</div>`;
+  const stock = `<div class="stock ok">Skladem ${p.volne} ks</div>`;
   let btn;
-  if (p.status !== 'free') btn = `<button class="add" type="button" disabled>Prodáno</button>`;
-  else if (v && p.volne > 1) btn = `<div class="qty card-qty" role="group" aria-label="Počet v košíku"><button type="button" data-dec="${p.id}" aria-label="Ubrat">−</button><b>${v} ks</b><button type="button" data-inc="${p.id}" aria-label="Přidat" ${v >= p.volne ? 'disabled' : ''}>+</button></div>`;
+  if (v && p.volne > 1) btn = `<div class="qty card-qty" role="group" aria-label="Počet v košíku"><button type="button" data-dec="${p.id}" aria-label="Ubrat">−</button><b>${v} ks</b><button type="button" data-inc="${p.id}" aria-label="Přidat" ${v >= p.volne ? 'disabled' : ''}>+</button></div>`;
   else if (v) btn = `<button class="add in" type="button" data-remove="${p.id}" aria-label="Odebrat z košíku">V košíku<span class="rm" aria-hidden="true">×</span></button>`;
   else btn = `<button class="add" type="button" data-add="${p.id}">Do košíku</button>`;
 
-  return `<article class="card ${p.status === 'sold' ? 'is-sold' : ''}">
-    <div class="media ${p.foto ? 'has-img' : ''}">${media}<div class="tags">${tags.join('')}</div>${ribbon}</div>
+  return `<article class="card">
+    <div class="media ${p.foto ? 'has-img' : ''}">${media}<div class="tags">${tags.join('')}</div></div>
     <div class="body">
       <div><div class="brand">${esc(p.znacka)}</div><h3 class="name">${esc(p.nazev)}</h3></div>
       ${flight}
@@ -591,9 +572,8 @@ function karta(p) {
 
 function filtrovane() {
   const q = state.q.trim().toLowerCase();
-  let list = state.items.filter(p =>
+  let list = state.items.filter(p => p.status === 'free' &&
     (state.kat === 'all' || (state.kat === 'podpis' ? !!p.podpis : p.kat === state.kat)) &&
-    (state.avail === 'all' || (state.avail === 'free' ? p.status === 'free' : p.status !== 'free')) &&
     (!q || (p.znacka + ' ' + p.nazev + ' ' + p.podpis).toLowerCase().includes(q)));
   const sp = p => p.flight ? p.flight[0] : -1;
   const s = {
@@ -605,11 +585,10 @@ function filtrovane() {
 }
 
 function render() {
-  const items = state.items;
-  const free = items.filter(p => p.status === 'free');
+  const items = state.items.filter(p => p.status === 'free'); // prodané kusy se na webu neukazují
   const kusu = items.reduce((s, p) => s + p.volne, 0);
-  const prodanych = items.reduce((s, p) => s + p.prodano, 0);
-  const minCena = free.length ? Math.min(...free.map(p => p.cena)) : 0;
+  const prodanych = state.items.reduce((s, p) => s + p.prodano, 0);
+  const minCena = items.length ? Math.min(...items.map(p => p.cena)) : 0;
   $('stats').innerHTML = items.length ? [
     [kusu, 'volných kusů'],
     [new Set(items.map(p => p.znacka)).size, 'značek'],
@@ -631,10 +610,10 @@ function render() {
 
   const list = filtrovane();
   let html = '';
-  if (!list.length) html = `<div class="empty">${items.length ? 'Tomuhle filtru nic neodpovídá.' : state.chyba ? '' : 'Načítám nabídku…'}</div>`;
+  if (!list.length) html = `<div class="empty">${items.length ? 'Tomuhle filtru nic neodpovídá.' : state.chyba ? '' : state.updated ? 'Teď je všechno prodané. Brzy přidám další.' : 'Načítám nabídku…'}</div>`;
   else if (state.sort === 'default' && state.kat === 'all' && !state.q) {
     for (const k of ['driver', 'fairway', 'mid', 'putter', 'obleceni']) {
-      const g = list.filter(p => p.kat === k).sort((a, b) => (a.status !== 'free') - (b.status !== 'free'));
+      const g = list.filter(p => p.kat === k);
       if (!g.length) continue;
       const ks = g.reduce((s, p) => s + p.volne, 0);
       html += `<h2 class="section-h">${NAZEV_SEKCE[k]}<small>${ks} ks volných</small></h2><div class="grid">${g.map(karta).join('')}</div>`;
@@ -801,12 +780,6 @@ document.addEventListener('click', e => {
   else if ('close' in t.dataset) zavri();
   else if ('reload' in t.dataset) nacti();
   else if ('dismiss' in t.dataset) { state.kosikZmeny = null; render(); if (!drawer.hidden) renderDrawer(); }
-});
-$('avail').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  state.avail = b.dataset.v;
-  for (const x of $('avail').children) x.setAttribute('aria-pressed', x === b);
-  render();
 });
 $('q').addEventListener('input', e => { state.q = e.target.value; render(); });
 $('sort').addEventListener('change', e => { state.sort = e.target.value; render(); });
