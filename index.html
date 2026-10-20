@@ -271,6 +271,9 @@ main { padding-block: 8px 120px; }
 form { display: flex; flex-direction: column; gap: 12px; }
 label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; }
 label .opt { font-weight: 400; color: var(--muted); }
+.adresa { display: flex; flex-direction: column; gap: 6px; }
+.adresa .fine a, .linkbtn { color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.linkbtn { border: 0; background: none; padding: 0; cursor: pointer; font-weight: 600; color: var(--ink); }
 form .field { padding: 11px 12px; font-size: 15px; font-weight: 400; width: 100%; }
 textarea.field { min-height: 80px; resize: vertical; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
@@ -425,7 +428,7 @@ const KATEGORIE = [
 const jeMuj = p => /semer/i.test(p.podpis || '');
 const NAZEV_SEKCE = { driver: 'Distance drivery', fairway: 'Fairway drivery', mid: 'Midrange', putter: 'Puttery & approach', obleceni: 'Oblečení' };
 
-const state = { items: [], kat: 'all', q: '', sort: 'default', cart: nactiKosik(), updated: null, postovne: null };
+const state = { items: [], kat: 'all', q: '', sort: 'default', cart: nactiKosik(), updated: null, postovne: null, zasilkovnaKlic: '' };
 
 /* ---------- Data ---------- */
 function rozeber(produkt) {
@@ -464,6 +467,7 @@ async function nacti() {
     if (!data.ok) throw new Error(data.error || 'Neznámá chyba');
     state.items = priprav(data.items);
     state.postovne = data.postovne || null;
+    state.zasilkovnaKlic = data.zasilkovnaKlic || '';
     // Text pruhu si Kuba mění v listu Nastavení (starší skript ho neposílá – pak zůstane text z HTML)
     if (typeof data.info === 'string') { $('info').textContent = data.info; $('info').hidden = !data.info.trim(); }
     state.updated = data.updated ? new Date(data.updated) : new Date();
@@ -708,7 +712,12 @@ function renderDrawer() {
           ${PREDANI.map(o => `<option ${d.predani === o ? 'selected' : ''}>${o}</option>`).join('')}
         </select>
       </label>
-      <label id="adresa" ${zasilkovna ? '' : 'hidden'}><span id="adresa-nadpis">${adresaNadpis}</span><textarea class="field" id="f-adresa" name="adresa" rows="2" placeholder="${adresaNapoveda}">${esc(d.adresa)}</textarea></label>
+      <div class="adresa" id="adresa" ${zasilkovna ? '' : 'hidden'}>
+        <label><span id="adresa-nadpis">${adresaNadpis}</span><textarea class="field" id="f-adresa" name="adresa" rows="2" placeholder="${adresaNapoveda}">${esc(d.adresa)}</textarea></label>
+        <p class="fine" id="adresa-mapa" ${jeNaAdresu(d.predani) ? 'hidden' : ''}>${state.zasilkovnaKlic
+          ? '<button type="button" class="linkbtn" data-mapa>Vybrat výdejní místo na mapě</button>'
+          : '<a href="https://www.zasilkovna.cz/pobocky" target="_blank" rel="noopener">Najít výdejní místo na mapě Zásilkovny</a>'}</p>
+      </div>
       <label><span>Poznámka <span class="opt">· nepovinné</span></span><textarea class="field" id="f-poznamka" name="poznamka" placeholder="Např. preferovaná váha nebo barva">${esc(d.poznamka)}</textarea></label>
       <div class="hp" aria-hidden="true"><label>Web<input id="f-web" name="web" tabindex="-1" autocomplete="off"></label></div>
       ${chybaFormulare ? `<div class="msg err" role="alert">${esc(chybaFormulare)}</div>` : ''}
@@ -719,6 +728,28 @@ function renderDrawer() {
 
 function telefonInfo(zasilkovna) {
   return zasilkovna ? '· povinné, přijde na něj avízo' : '· nepovinné';
+}
+
+// Mapa výdejních míst – oficiální widget Zásilkovny s klíčem z listu Nastavení. Knihovna se načte až po kliknutí.
+let packetaKnihovna = null;
+function vyberMisto() {
+  packetaKnihovna ||= new Promise((ok, chyba) => {
+    const s = document.createElement('script');
+    s.src = 'https://widget.packeta.com/v6/www/js/library.js';
+    s.onload = ok;
+    s.onerror = () => { packetaKnihovna = null; s.remove(); chyba(); };
+    document.head.appendChild(s);
+  });
+  packetaKnihovna.then(() => Packeta.Widget.pick(state.zasilkovnaKlic, bod => {
+    const f = $('f-adresa');
+    if (!bod || !f) return;
+    const misto = bod.name || bod.formatedValue || '';
+    const mesto = [bod.zip, bod.city].filter(Boolean).join(' ');
+    f.value = (mesto && !misto.includes(mesto) ? misto + ', ' + mesto : misto) + (bod.id ? ` (ID ${bod.id})` : '');
+  }, { country: 'cz', language: 'cs' }), () => {
+    chybaFormulare = 'Mapu Zásilkovny se nepodařilo načíst. Napiš výdejní místo ručně.';
+    renderDrawer();
+  });
 }
 
 function nactiFormular() {
@@ -779,6 +810,7 @@ document.addEventListener('click', e => {
   else if (t.dataset.dec) pridej(+t.dataset.dec, -1);
   else if ('close' in t.dataset) zavri();
   else if ('reload' in t.dataset) nacti();
+  else if ('mapa' in t.dataset) vyberMisto();
   else if ('dismiss' in t.dataset) { state.kosikZmeny = null; render(); if (!drawer.hidden) renderDrawer(); }
 });
 $('q').addEventListener('input', e => { state.q = e.target.value; render(); });
@@ -796,6 +828,7 @@ $('drawerBody').addEventListener('change', e => {
   const [nadpis, napoveda] = adresaPopis(e.target.value);
   $('adresa').hidden = !zasilkovna;
   $('adresa-nadpis').textContent = nadpis;
+  $('adresa-mapa').hidden = jeNaAdresu(e.target.value);
   $('f-adresa').placeholder = napoveda;
   $('tel-opt').textContent = telefonInfo(zasilkovna);
 });
