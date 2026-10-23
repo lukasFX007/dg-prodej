@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Jakub Semerád – prodej disků">
 <meta property="og:description" content="Disky a oblečení – nové i podepsané kusy. Zásilkovnou, nad 1 000 Kč poštovné zdarma.">
-<meta property="og:image" content="https://lukasfx007.github.io/dg-prodej/foto/radek-7.jpg">
+<meta property="og:image" content="https://lukasfx007.github.io/dg-prodej/og.jpg">
 <meta property="og:url" content="https://lukasfx007.github.io/dg-prodej/">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -452,25 +452,37 @@ function priprav(raw) {
     const volne = Math.max(0, ks - prodano - rezervovano);
     // Na webu jsou jen volné kusy – prodané i zarezervované se schovají (po zrušení objednávky se vrátí)
     const stav = volne > 0 ? 'free' : 'sold';
-    // Fotka z tabulky (sloupec Foto URL) má přednost, jinak lokální kopie vytažená z exportu .xlsx
-    const foto = r.foto || `foto/radek-${r.id}.jpg`;
+    // Náhled z Google Drive (sloupec Foto URL) – do mřížky stačí menší rozlišení, ušetří to data v mobilu
+    const foto = String(r.foto || '').replace(/([?&]sz=w)\d+/, '$1500');
     const p = { ...r, foto, ks, prodano, rezervovano, volne, nazev, flight, status: stav };
     p.kat = kategorie(p);
     return p;
   });
 }
 
+function pouzij(data) {
+  state.items = priprav(data.items);
+  state.postovne = data.postovne || null;
+  state.zasilkovnaKlic = data.zasilkovnaKlic || '';
+  // Text pruhu si Kuba mění v listu Nastavení (starší skript ho neposílá – pak zůstane text z HTML)
+  if (typeof data.info === 'string') { $('info').textContent = data.info; $('info').hidden = !data.info.trim(); }
+  state.updated = data.updated ? new Date(data.updated) : new Date();
+}
+// Poslední známou nabídku ukážeme hned z paměti prohlížeče – Apps Script odpovídá 1–4 s.
+// Košík se srovnává až s čerstvými daty, ať z něj nic nezmizí podle staré verze.
+function nactiZPameti() {
+  try {
+    const data = JSON.parse(localStorage.getItem('dg-nabidka') || 'null');
+    if (data && data.ok && Array.isArray(data.items)) { pouzij(data); render(); }
+  } catch (_) {}
+}
 async function nacti() {
   try {
     const res = await fetch(API_URL, { cache: 'no-store' });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Neznámá chyba');
-    state.items = priprav(data.items);
-    state.postovne = data.postovne || null;
-    state.zasilkovnaKlic = data.zasilkovnaKlic || '';
-    // Text pruhu si Kuba mění v listu Nastavení (starší skript ho neposílá – pak zůstane text z HTML)
-    if (typeof data.info === 'string') { $('info').textContent = data.info; $('info').hidden = !data.info.trim(); }
-    state.updated = data.updated ? new Date(data.updated) : new Date();
+    pouzij(data);
+    try { localStorage.setItem('dg-nabidka', JSON.stringify(data)); } catch (_) {}
     state.chyba = null;
   } catch (e) {
     state.chyba = 'Nabídku se nepodařilo načíst (' + e.message + ').';
@@ -835,6 +847,7 @@ $('drawerBody').addEventListener('change', e => {
   $('tel-opt').textContent = telefonInfo(zasilkovna);
 });
 
+nactiZPameti();
 nacti();
 // Obnovit stav, když se člověk vrátí na stránku (ať vidí, co mezitím někdo koupil)
 document.addEventListener('visibilitychange', () => { if (!document.hidden) nacti(); });
