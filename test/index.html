@@ -12,6 +12,7 @@
 <meta property="og:image" content="https://jakubsemerad.cz/test/og.jpg">
 <meta property="og:url" content="https://jakubsemerad.cz/test/">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://lh3.googleusercontent.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Instrument+Sans:wght@400;500;600&family=Azeret+Mono:wght@500;700&display=swap">
@@ -468,8 +469,7 @@ function priprav(raw) {
     const volne = Math.max(0, ks - prodano - rezervovano);
     // Na webu jsou jen volné kusy – prodané i zarezervované se schovají (po zrušení objednávky se vrátí)
     const stav = volne > 0 ? 'free' : 'sold';
-    // Náhled z Google Drive (sloupec Foto URL) – do mřížky stačí menší rozlišení, ušetří to data v mobilu
-    const foto = String(r.foto || '').replace(/([?&]sz=w)\d+/, '$1500');
+    const foto = fotka(r.foto, 500);
     const p = { ...r, foto, ks, prodano, rezervovano, volne, nazev, flight, status: stav };
     p.kat = kategorie(p);
     return p;
@@ -492,12 +492,25 @@ function nactiZPameti() {
     if (data && data.ok && Array.isArray(data.items)) { pouzij(data); render(); }
   } catch (_) {}
 }
+// Náhled z Google Drive (sloupec Foto URL) rovnou z lh3.googleusercontent.com: drive.google.com/thumbnail nejdřív
+// přesměrovává a při víc fotkách najednou ho Google brzdí. Do mřížky stačí menší rozlišení, ušetří to data v mobilu.
+function fotka(url, sirka) {
+  const s = String(url || '');
+  const id = (s.match(/drive\.google\.com\/(?:thumbnail\?id=|file\/d\/|open\?id=)([\w-]+)/) || [])[1];
+  if (id) return `https://lh3.googleusercontent.com/d/${id}=w${sirka}`;
+  return s.replace(/([?&]sz=w)\d+/, '$1' + sirka).replace(/(lh3\.googleusercontent\.com\/d\/[\w-]+)=w\d+$/, '$1=w' + sirka);
+}
 async function nacti() {
   try {
     const res = await fetch(API_URL, { cache: 'no-store' });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Neznámá chyba');
-    pouzij(data);
+    // Stejná nabídka jako z paměti → nepřekreslovat (fotky by zbytečně problikly)
+    const json = JSON.stringify(data.items);
+    let stejne = false;
+    try { stejne = json === JSON.stringify((JSON.parse(localStorage.getItem('dg-nabidka') || 'null') || {}).items) && state.items.length > 0; } catch (_) {}
+    if (stejne) state.updated = data.updated ? new Date(data.updated) : new Date();
+    else pouzij(data);
     try { localStorage.setItem('dg-nabidka', JSON.stringify(data)); } catch (_) {}
     state.chyba = null;
   } catch (e) {
@@ -653,7 +666,14 @@ function render() {
   } else {
     html = `<div class="grid" style="margin-top:22px">${list.map(karta).join('')}</div>`;
   }
+  // Už načtené fotky přeneseme do nového seznamu, ať se při překreslení (košík, čerstvá data) znovu nestahují a neproblikávají
+  const nactene = new Map();
+  $('list').querySelectorAll('img[src]').forEach(i => { if (i.complete && i.naturalWidth) nactene.set(i.getAttribute('src'), i); });
   $('list').innerHTML = html;
+  $('list').querySelectorAll('img[src]').forEach(i => {
+    const stara = nactene.get(i.getAttribute('src'));
+    if (stara) { stara.className = i.className; i.replaceWith(stara); nactene.delete(i.getAttribute('src')); }
+  });
 
   const kp = kosikPolozky();
   const nks = kp.reduce((s, x) => s + x.ks, 0);
@@ -836,7 +856,7 @@ function zvetsi(id) {
   const p = state.items.find(x => x.id === id);
   if (!p || !p.foto) return;
   // Google Drive náhled ve větším rozlišení
-  $('lbImg').src = p.foto.replace(/([?&]sz=w)\d+/, '$11600');
+  $('lbImg').src = fotka(p.foto, 1600);
   $('lbImg').alt = `${p.znacka} ${p.nazev}`;
   $('lbText').textContent = `${p.znacka} ${p.nazev}${p.vaha ? ' · ' + p.vaha : ''}${p.velikost ? ' · vel. ' + p.velikost : ''}`;
   lightbox.hidden = false;
