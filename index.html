@@ -176,6 +176,17 @@ main { padding-block: 8px 120px; }
 .media img { width: 100%; height: 100%; object-fit: contain; padding: 6%; transition: transform .3s ease; }
 .media img.full { padding: 0; object-fit: cover; }
 .card:hover .media img { transform: scale(1.04); }
+.media.has-img { cursor: zoom-in; }
+.media .zoom { position: absolute; right: 8px; bottom: 8px; width: 34px; height: 34px; border-radius: 50%; border: 0; display: grid; place-items: center;
+  background: rgba(21, 33, 26, .62); color: #fff; cursor: zoom-in; }
+.media .zoom svg { width: 18px; height: 18px; }
+.lightbox { position: fixed; inset: 0; z-index: 60; background: rgba(8, 12, 10, .92); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; padding: 16px; cursor: zoom-out; }
+.lightbox[hidden] { display: none; }
+.lightbox img { max-width: 100%; max-height: calc(100% - 56px); object-fit: contain; border-radius: 10px; background: #fff; }
+.lightbox p { margin: 0; color: #fff; font-weight: 600; text-align: center; }
+.lightbox .x { position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; border-radius: 50%; border: 0;
+  background: rgba(255, 255, 255, .16); color: #fff; font-size: 26px; cursor: pointer; }
 .disc {
   position: absolute; inset: 0; display: grid; place-items: center;
 }
@@ -401,6 +412,11 @@ footer .who small { font: 600 12px var(--f-num); color: var(--muted); margin-lef
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Fotka">
+  <button class="x" type="button" data-lbclose aria-label="Zavřít">×</button>
+  <img id="lbImg" alt="">
+  <p id="lbText"></p>
+</div>
 <aside class="drawer" id="drawer" hidden aria-labelledby="drawerTitle" role="dialog" aria-modal="true">
   <div class="drawer-h">
     <h2 id="drawerTitle">Košík</h2>
@@ -576,7 +592,7 @@ function karta(p) {
   else btn = `<button class="add" type="button" data-add="${p.id}">Do košíku</button>`;
 
   return `<article class="card">
-    <div class="media ${p.foto ? 'has-img' : ''}">${media}<div class="tags">${tags.join('')}</div></div>
+    <div class="media ${p.foto ? 'has-img' : ''}" ${p.foto ? `data-zoom="${p.id}"` : ''}>${media}<div class="tags">${tags.join('')}</div>${p.foto ? `<button class="zoom" type="button" data-zoom="${p.id}" aria-label="Zvětšit fotku"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 8v6M8 11h6"/></svg></button>` : ''}</div>
     <div class="body">
       <div><div class="brand">${esc(p.znacka)}</div><h3 class="name">${esc(p.nazev)}</h3></div>
       ${flight}
@@ -813,8 +829,31 @@ async function odesli(e) {
   }
 }
 
+/* ---------- Zvětšení fotky ---------- */
+const lightbox = $('lightbox');
+function zvetsi(id) {
+  const p = state.items.find(x => x.id === id);
+  if (!p || !p.foto) return;
+  // Google Drive náhled ve větším rozlišení
+  $('lbImg').src = p.foto.replace(/([?&]sz=w)\d+/, '$11600');
+  $('lbImg').alt = `${p.znacka} ${p.nazev}`;
+  $('lbText').textContent = `${p.znacka} ${p.nazev}${p.vaha ? ' · ' + p.vaha : ''}${p.velikost ? ' · vel. ' + p.velikost : ''}`;
+  lightbox.hidden = false;
+  document.body.style.overflow = 'hidden';
+  lightbox.querySelector('.x').focus();
+}
+function zavriFotku() {
+  lightbox.hidden = true;
+  $('lbImg').removeAttribute('src');
+  if (drawer.hidden) document.body.style.overflow = '';
+}
+lightbox.addEventListener('click', zavriFotku);
+
 /* ---------- Události ---------- */
 document.addEventListener('click', e => {
+  const z = e.target.closest('[data-zoom]');
+  // Tlačítka v kartě (štítky ne, ty nejsou tlačítka) mají přednost – zvětšuje klik na fotku
+  if (z && !e.target.closest('button:not([data-zoom])')) { zvetsi(+z.dataset.zoom); return; }
   const t = e.target.closest('button');
   if (!t) return;
   if (t.dataset.kat) { state.kat = t.dataset.kat; render(); }
@@ -832,7 +871,11 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
 $('openCart').addEventListener('click', otevri);
 $('closeCart').addEventListener('click', zavri);
 scrim.addEventListener('click', zavri);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !drawer.hidden) zavri(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!lightbox.hidden) zavriFotku();
+  else if (!drawer.hidden) zavri();
+});
 $('drawerBody').addEventListener('submit', odesli);
 $('drawerBody').addEventListener('change', e => {
   if (e.target.id !== 'f-predani') return;
